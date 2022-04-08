@@ -1,0 +1,8 @@
+{{ template "top" . }}
+<h1>{{ .Title }}</h1>
+<p>{{ .Description }}</p>
+<div>
+{{ .HTMLBody -}}
+</div>
+Tags: <ul>{{ range .Tags }}<li>{{ . }}</li>{{ end }}</ul>
+{{ template "bottom" . }}

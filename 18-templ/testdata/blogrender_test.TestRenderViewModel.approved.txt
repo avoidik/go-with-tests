@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BLOG</title>
+    <meta charset="UTF-8"/>
+    <meta name="description" content="wonderful content" lang="en"/>
+</head>
+<body>
+<nav role="navigation">
+    <div>
+        <h1>BLOG</h1>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/about">About</a></li>
+            <li><a href="/archive">Archive</a></li>
+        </ul>
+    </div>
+</nav>
+<main>
+<h1>hello world</h1>
+<p>This is a description</p>
+<div>
+<p>This is <strong>a post</strong></p>
+</div>
+Tags: <ul><li>go</li><li>tdd</li></ul>
+</main>
+<footer>
+    <ul>
+        <li><a href="/">Home</a></li>
+    </ul>
+</footer>
+</body>
+</html>
