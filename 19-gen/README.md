@@ -1,0 +1,1 @@
+go mod edit -go=1.18
