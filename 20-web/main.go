@@ -21,11 +21,19 @@ func (s *InMemStore) RecordWin(player string) {
 	s.score[player]++
 }
 
+func (s *InMemStore) GetLeague() []Player {
+	var league []Player
+	for name, wins := range s.score {
+		league = append(league, Player{Name: name, Wins: wins})
+	}
+	return league
+}
+
 func NewInMemStore() *InMemStore {
 	return &InMemStore{score: map[string]int{}}
 }
 
 func main() {
-	store := &PlayerServer{store: NewInMemStore()}
-	log.Fatal(http.ListenAndServe(":5000", store))
+	server := NewPlayersServer(NewInMemStore())
+	log.Fatal(http.ListenAndServe(":5000", server))
 }
