@@ -7,13 +7,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"sync"
 	"testing"
 )
 
 type StubPlayerStore struct {
+	mu       sync.RWMutex
 	scores   map[string]int
 	winClass []string
-	league   []Player
+	league   League
 }
 
 func assertResponseBody(t *testing.T, got, want string) {
@@ -43,22 +45,27 @@ func newPostScoreRequest(t *testing.T, player string) *http.Request {
 }
 
 func (s *StubPlayerStore) GetPlayerScore(player string) int {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.scores[player]
 }
 
 func (s *StubPlayerStore) RecordWin(name string) {
 	s.winClass = append(s.winClass, name)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.scores[name]++
 }
 
-func (s *StubPlayerStore) GetLeague() []Player {
+func (s *StubPlayerStore) GetLeague() League {
 	return s.league
 }
 
 func TestPostPlayers(t *testing.T) {
 	storeStub := &StubPlayerStore{
-		map[string]int{},
-		[]string{},
-		[]Player{},
+		scores:   map[string]int{},
+		winClass: []string{},
+		league:   League{},
 	}
 
 	server := NewPlayersServer(storeStub)
@@ -78,17 +85,19 @@ func TestPostPlayers(t *testing.T) {
 		if storeStub.winClass[0] != "Mary" {
 			t.Errorf("got %q but expected %q", storeStub.winClass[0], "Mary")
 		}
+
+		assertResponseBody(t, res.Body.String(), "1")
 	})
 }
 
 func TestGetPlayers(t *testing.T) {
 	server := NewPlayersServer(&StubPlayerStore{
-		map[string]int{
+		scores: map[string]int{
 			"Floyd":  10,
 			"Pepper": 20,
 		},
-		[]string{},
-		[]Player{},
+		winClass: []string{},
+		league:   League{},
 	})
 
 	t.Run("404", func(t *testing.T) {
@@ -127,7 +136,7 @@ func newLeagueRequest(t *testing.T) *http.Request {
 	return req
 }
 
-func assertLeague(t *testing.T, got, want []Player) {
+func assertLeague(t *testing.T, got, want League) {
 	t.Helper()
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("got %v but want %v", got, want)
@@ -143,9 +152,9 @@ func assertContentJson(t *testing.T, headers *http.Header) {
 	}
 }
 
-func getLeagueFromResponse(t *testing.T, body *bytes.Buffer) []Player {
+func getLeagueFromResponse(t *testing.T, body *bytes.Buffer) League {
 	t.Helper()
-	var got []Player
+	var got League
 	err := json.NewDecoder(body).Decode(&got)
 	if err != nil {
 		t.Fatalf("unable to decode %q with err: %v", body, err)
@@ -155,7 +164,7 @@ func getLeagueFromResponse(t *testing.T, body *bytes.Buffer) []Player {
 
 func TestGetLeague(t *testing.T) {
 	t.Run("get players", func(t *testing.T) {
-		wantedLeague := []Player{
+		wantedLeague := League{
 			{Name: "Peter", Wins: 10},
 			{Name: "Derek", Wins: 15},
 			{Name: "Mary", Wins: 7},

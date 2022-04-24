@@ -3,37 +3,24 @@ package main
 import (
 	"log"
 	"net/http"
-	"sync"
+	"os"
 )
 
-type InMemStore struct {
-	score map[string]int
-	mu    sync.Mutex
-}
-
-func (s *InMemStore) GetPlayerScore(player string) int {
-	return s.score[player]
-}
-
-func (s *InMemStore) RecordWin(player string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.score[player]++
-}
-
-func (s *InMemStore) GetLeague() []Player {
-	var league []Player
-	for name, wins := range s.score {
-		league = append(league, Player{Name: name, Wins: wins})
-	}
-	return league
-}
-
-func NewInMemStore() *InMemStore {
-	return &InMemStore{score: map[string]int{}}
-}
+const dbFilename = "game.db.json"
 
 func main() {
-	server := NewPlayersServer(NewInMemStore())
+	db, err := os.OpenFile(dbFilename, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatalf("unable to open %q due to error %v", dbFilename, err)
+	}
+	defer db.Close()
+
+	fsps, err := NewFileSystemPlayerStore(db)
+	if err != nil {
+		log.Fatalf("unexpected error: %v", err)
+	}
+
+	server := NewPlayersServer(fsps)
+	// server := NewPlayersServer(NewInMemStore())
 	log.Fatal(http.ListenAndServe(":5000", server))
 }

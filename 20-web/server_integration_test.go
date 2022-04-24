@@ -6,8 +6,17 @@ import (
 	"testing"
 )
 
-func TestPostGet(t *testing.T) {
-	server := NewPlayersServer(NewInMemStore())
+func TestPostGetMemStore(t *testing.T) {
+	database, cleanDatabase := createTempFile(t, "[]")
+	defer cleanDatabase()
+
+	fsps, err := NewFileSystemPlayerStore(database)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	server := NewPlayersServer(fsps)
+	// server := NewPlayersServer(NewInMemStore())
 	player := "Fred"
 
 	server.ServeHTTP(httptest.NewRecorder(), newPostScoreRequest(t, player))
@@ -28,7 +37,7 @@ func TestPostGet(t *testing.T) {
 		assertResponseCode(t, resp.Code, http.StatusOK)
 
 		got := getLeagueFromResponse(t, resp.Body)
-		want := []Player{
+		want := League{
 			{Name: "Fred", Wins: 3},
 		}
 		assertLeague(t, got, want)
