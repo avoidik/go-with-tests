@@ -1,7 +1,8 @@
-package main
+package poker_test
 
 import (
 	"io"
+	"poker"
 	"testing"
 )
 
@@ -9,7 +10,7 @@ func TestWriteDiskette(t *testing.T) {
 	file, cleanUp := createTempFile(t, "12345")
 	defer cleanUp()
 
-	database := &diskette{block: file}
+	database := poker.NewDiskette(file)
 
 	n, err := database.Write([]byte("abc"))
 	if err != nil {

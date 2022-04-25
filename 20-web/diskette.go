@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"os"
@@ -6,6 +6,10 @@ import (
 
 type diskette struct {
 	block *os.File
+}
+
+func NewDiskette(block *os.File) *diskette {
+	return &diskette{block: block}
 }
 
 func (t *diskette) Write(p []byte) (n int, err error) {

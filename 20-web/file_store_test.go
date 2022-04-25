@@ -1,8 +1,9 @@
-package main
+package poker_test
 
 import (
 	"io/ioutil"
 	"os"
+	"poker"
 	"testing"
 )
 
@@ -15,14 +16,14 @@ func TestFileSystemStore(t *testing.T) {
 		]`)
 		defer cleanDatabase()
 
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
 		got := store.GetLeague()
 
-		want := League{
+		want := poker.League{
 			{Name: "Jane", Wins: 15},
 			{Name: "John", Wins: 10},
 		}
@@ -40,7 +41,7 @@ func TestFileSystemStore(t *testing.T) {
 		]`)
 		defer cleanDatabase()
 
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -69,7 +70,7 @@ func TestFileSystemStore(t *testing.T) {
 		]`)
 		defer cleanDatabase()
 
-		store, err := NewFileSystemPlayerStore(database)
+		store, err := poker.NewFileSystemPlayerStore(database)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -88,7 +89,7 @@ func TestFileSystemStore(t *testing.T) {
 		database, cleanUp := createTempFile(t, "")
 		defer cleanUp()
 
-		_, err := NewFileSystemPlayerStore(database)
+		_, err := poker.NewFileSystemPlayerStore(database)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}

@@ -1,4 +1,4 @@
-package main
+package poker
 
 import (
 	"encoding/json"
@@ -11,6 +11,8 @@ type FileSystemPlayerStore struct {
 	database *json.Encoder
 	league   League
 }
+
+const dbFilename = "game.db.json"
 
 func (f *FileSystemPlayerStore) GetLeague() League {
 	sort.Slice(f.league, func(i, j int) bool {
@@ -69,4 +71,21 @@ func NewFileSystemPlayerStore(database *os.File) (*FileSystemPlayerStore, error)
 		database: json.NewEncoder(&diskette{block: database}),
 		league:   league,
 	}, nil
+}
+
+func FileSystemPlayerStoreFromFile() (*FileSystemPlayerStore, func(), error) {
+	db, err := os.OpenFile(dbFilename, os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unable to open %q due to error %v", dbFilename, err)
+	}
+	closeFunc := func() {
+		db.Close()
+	}
+
+	fsps, err := NewFileSystemPlayerStore(db)
+	if err != nil {
+		return nil, nil, fmt.Errorf("unexpected error: %v", err)
+	}
+
+	return fsps, closeFunc, nil
 }

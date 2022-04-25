@@ -1,8 +1,9 @@
-package main
+package poker_test
 
 import (
 	"net/http"
 	"net/http/httptest"
+	"poker"
 	"testing"
 )
 
@@ -10,12 +11,12 @@ func TestPostGetMemStore(t *testing.T) {
 	database, cleanDatabase := createTempFile(t, "[]")
 	defer cleanDatabase()
 
-	fsps, err := NewFileSystemPlayerStore(database)
+	fsps, err := poker.NewFileSystemPlayerStore(database)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	server := NewPlayersServer(fsps)
+	server := poker.NewPlayersServer(fsps)
 	// server := NewPlayersServer(NewInMemStore())
 	player := "Fred"
 
@@ -37,7 +38,7 @@ func TestPostGetMemStore(t *testing.T) {
 		assertResponseCode(t, resp.Code, http.StatusOK)
 
 		got := getLeagueFromResponse(t, resp.Body)
-		want := League{
+		want := poker.League{
 			{Name: "Fred", Wins: 3},
 		}
 		assertLeague(t, got, want)

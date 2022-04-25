@@ -1,4 +1,4 @@
-package main
+package poker_test
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"poker"
 	"reflect"
 	"sync"
 	"testing"
@@ -15,7 +16,7 @@ type StubPlayerStore struct {
 	mu       sync.RWMutex
 	scores   map[string]int
 	winClass []string
-	league   League
+	league   poker.League
 }
 
 func assertResponseBody(t *testing.T, got, want string) {
@@ -57,18 +58,30 @@ func (s *StubPlayerStore) RecordWin(name string) {
 	s.scores[name]++
 }
 
-func (s *StubPlayerStore) GetLeague() League {
+func (s *StubPlayerStore) GetLeague() poker.League {
 	return s.league
+}
+
+func assertPlayerWin(t *testing.T, storeStub *StubPlayerStore, player string) {
+	t.Helper()
+
+	if len(storeStub.winClass) != 1 {
+		t.Errorf("got %d but want %d calls", len(storeStub.winClass), 1)
+	}
+
+	if storeStub.winClass[0] != player {
+		t.Errorf("got %q but expected %q", storeStub.winClass[0], player)
+	}
 }
 
 func TestPostPlayers(t *testing.T) {
 	storeStub := &StubPlayerStore{
 		scores:   map[string]int{},
 		winClass: []string{},
-		league:   League{},
+		league:   poker.League{},
 	}
 
-	server := NewPlayersServer(storeStub)
+	server := poker.NewPlayersServer(storeStub)
 
 	t.Run("Mary", func(t *testing.T) {
 		req := newPostScoreRequest(t, "Mary")
@@ -78,26 +91,20 @@ func TestPostPlayers(t *testing.T) {
 
 		assertResponseCode(t, res.Code, http.StatusAccepted)
 
-		if len(storeStub.winClass) != 1 {
-			t.Errorf("got %d but want %d calls", len(storeStub.winClass), 1)
-		}
-
-		if storeStub.winClass[0] != "Mary" {
-			t.Errorf("got %q but expected %q", storeStub.winClass[0], "Mary")
-		}
+		assertPlayerWin(t, storeStub, "Mary")
 
 		assertResponseBody(t, res.Body.String(), "1")
 	})
 }
 
 func TestGetPlayers(t *testing.T) {
-	server := NewPlayersServer(&StubPlayerStore{
+	server := poker.NewPlayersServer(&StubPlayerStore{
 		scores: map[string]int{
 			"Floyd":  10,
 			"Pepper": 20,
 		},
 		winClass: []string{},
-		league:   League{},
+		league:   poker.League{},
 	})
 
 	t.Run("404", func(t *testing.T) {
@@ -136,7 +143,7 @@ func newLeagueRequest(t *testing.T) *http.Request {
 	return req
 }
 
-func assertLeague(t *testing.T, got, want League) {
+func assertLeague(t *testing.T, got, want poker.League) {
 	t.Helper()
 	if !reflect.DeepEqual(want, got) {
 		t.Errorf("got %v but want %v", got, want)
@@ -152,9 +159,9 @@ func assertContentJson(t *testing.T, headers *http.Header) {
 	}
 }
 
-func getLeagueFromResponse(t *testing.T, body *bytes.Buffer) League {
+func getLeagueFromResponse(t *testing.T, body *bytes.Buffer) poker.League {
 	t.Helper()
-	var got League
+	var got poker.League
 	err := json.NewDecoder(body).Decode(&got)
 	if err != nil {
 		t.Fatalf("unable to decode %q with err: %v", body, err)
@@ -164,14 +171,14 @@ func getLeagueFromResponse(t *testing.T, body *bytes.Buffer) League {
 
 func TestGetLeague(t *testing.T) {
 	t.Run("get players", func(t *testing.T) {
-		wantedLeague := League{
+		wantedLeague := poker.League{
 			{Name: "Peter", Wins: 10},
 			{Name: "Derek", Wins: 15},
 			{Name: "Mary", Wins: 7},
 		}
 		store := &StubPlayerStore{}
 		store.league = wantedLeague
-		server := NewPlayersServer(store)
+		server := poker.NewPlayersServer(store)
 
 		req := newLeagueRequest(t)
 		res := httptest.NewRecorder()
