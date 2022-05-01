@@ -19,6 +19,7 @@ func main() {
 	}
 	defer cleanUp()
 
-	game := poker.NewCLI(fsps, os.Stdin)
+	alerter := poker.BlindAlerterFunc(poker.StdOutAlerter)
+	game := poker.NewCLI(fsps, os.Stdin, alerter)
 	game.PlayPoker()
 }
